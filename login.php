@@ -1,15 +1,20 @@
 <?php
-session_start();
 ini_set('session.cookie_httponly', 1);
-// ini_set('session.cookie_secure', 1);
+session_start();
+
 $conn = new mysqli("localhost", "root", "", "secur_app");
+if ($conn->connect_error) {
+    die("Connexion échouée : " . $conn->connect_error);
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
     $query = "SELECT * FROM users WHERE username='$username' AND password='$password'";
     $result = $conn->query($query);
-    if ($result->num_rows > 0) {
+    if ($result === false) {
+        echo "<p style='color:red'>Erreur SQL : " . $conn->error . "</p>";
+    } elseif ($result->num_rows > 0) {
         $_SESSION['user'] = $username;
         header("Location: index.php");
     } else {
