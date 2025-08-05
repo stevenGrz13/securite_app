@@ -10,17 +10,23 @@ if ($conn->connect_error) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
-    $query = "SELECT * FROM users WHERE username='$username' AND password='$password'";
-    $result = $conn->query($query);
-    if ($result === false) {
-        echo "<p style='color:red'>Erreur SQL : " . $conn->error . "</p>";
-    } elseif ($result->num_rows > 0) {
-        $_SESSION['user'] = $username;
-        header("Location: index.php");
+    $stmt = $conn->prepare("SELECT * FROM users WHERE username=? AND password=?");
+    if ($stmt === false) {
+        echo "<p style='color:red'>Erreur de préparation : " . $conn->error . "</p>";
     } else {
-        echo "<p style='color:red'>Connexion échouée.</p>";
+        $stmt->bind_param("ss", $username, $password);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $_SESSION['user'] = $username;
+            header("Location: index.php");
+        } else {
+            echo "<p style='color:red'>Connexion échouée.</p>";
+        }
+        $stmt->close();
     }
 }
+$conn->close();
 ?>
 
 <!DOCTYPE html>

@@ -13,6 +13,9 @@ if ($conn->connect_error) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $comment = $conn->real_escape_string($_POST['comment']);
     $article_id = (int)$_GET['id'];
+    if (strpos($comment, '<script') !== false) {
+        file_put_contents('xss_attempts.log', date('Y-m-d H:i:s') . " : " . $comment . "\n", FILE_APPEND);
+    }
     $query = "INSERT INTO comments (article_id, content) VALUES ('$article_id', '$comment')";
     if ($conn->query($query)) {
         echo "<p>Commentaire ajouté avec succès !</p>";
@@ -28,6 +31,7 @@ $result = $conn->query("SELECT content FROM comments WHERE article_id='{$_GET['i
 <html>
 <head>
     <title>Détails de l'article</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
 </head>
 <body>
     <h2>Article : T-shirt</h2>
@@ -36,8 +40,11 @@ $result = $conn->query("SELECT content FROM comments WHERE article_id='{$_GET['i
     <h3>Commentaires</h3>
     <?php
     while ($row = $result->fetch_assoc()) {
-        echo $row['content'] . "<br>";
+        echo "<p>" . htmlspecialchars($row['content'], ENT_QUOTES, 'UTF-8') . "</p>";
     }
+    // while ($row = $result->fetch_assoc()) {
+    // echo $row['content'] . "<br>"; // Remplace htmlspecialchars
+    // }
     ?>
     <h4>Ajouter un commentaire</h4>
     <form method="POST" action="">
