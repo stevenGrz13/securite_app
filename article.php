@@ -13,6 +13,9 @@ if ($conn->connect_error) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $comment = $conn->real_escape_string($_POST['comment']);
     $article_id = (int)$_GET['id'];
+    if (strpos($comment, '<script') !== false) {
+        file_put_contents('xss_attempts.log', date('Y-m-d H:i:s') . " : " . $comment . "\n", FILE_APPEND);
+    }
     $query = "INSERT INTO comments (article_id, content) VALUES ('$article_id', '$comment')";
     if ($conn->query($query)) {
         echo "<p>Commentaire ajouté avec succès !</p>";
