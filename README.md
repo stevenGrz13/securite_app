@@ -8,3 +8,5 @@
 
 
 # dans l'input de commentaire 
+
+# vous allez avoir de target_server.py dans votre xamp et le lancer
