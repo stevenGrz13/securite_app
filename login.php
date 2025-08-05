@@ -1,7 +1,7 @@
 <?php
 session_start();
 ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_secure', 1);
+// ini_set('session.cookie_secure', 1);
 $conn = new mysqli("localhost", "root", "", "secur_app");
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {

@@ -28,6 +28,7 @@ $result = $conn->query("SELECT content FROM comments WHERE article_id='{$_GET['i
 <html>
 <head>
     <title>Détails de l'article</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
 </head>
 <body>
     <h2>Article : T-shirt</h2>
@@ -36,7 +37,7 @@ $result = $conn->query("SELECT content FROM comments WHERE article_id='{$_GET['i
     <h3>Commentaires</h3>
     <?php
     while ($row = $result->fetch_assoc()) {
-        echo $row['content'] . "<br>";
+        echo "<p>" . htmlspecialchars($row['content'], ENT_QUOTES, 'UTF-8') . "</p>";
     }
     ?>
     <h4>Ajouter un commentaire</h4>
